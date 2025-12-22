@@ -205,4 +205,4 @@ except KeyboardInterrupt:  #  Ctrl+C
     sys.exit(0)  # Завершение программы
 except Exception as e:  # eсли другая ошибка
     print(f"\nПроизошла ошибка при сканировании: {str(e)}")
-    sys.exit(1)  # завершение программы с ошикой 
+    sys.exit(1)  # завершение программы с ошикой
