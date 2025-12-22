@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# Импорт необходимых модулей Python
 import socket  # Модуль для сетевых соединений
 import threading  # Модуль для многопоточности
 import argparse  # Модуль для парсинга аргументов командной строки
@@ -7,19 +5,17 @@ import sys  # Модуль для системных функций
 import time  # Модуль для работы со временем
 import ipaddress  # Модуль для работы с IP-адресами
 
-# Шаг 1: Создаем словарь с общеизвестными портами и сервисами
+# Создание словарь с портами и сервисами
 COMMON_PORTS = {
     21: "FTP", 22: "SSH", 23: "Telnet", 25: "SMTP",
     53: "DNS", 80: "HTTP", 110: "POP3", 143: "IMAP",
     443: "HTTPS", 445: "SMB", 993: "IMAPS", 995: "POP3S",
-    3306: "MySQL", 3389: "RDP", 5432: "PostgreSQL", 8080: "HTTP Proxy"
-}
-
-# Шаг 2: Создаем класс для сканирования портов
+    3306: "MySQL", 3389: "RDP", 5432: "PostgreSQL", 8080: "HTTP Proxy"}
+# Создание класса для сканирования портов
 class PortScanner:
     """Класс для сканирования портов на целевом хосте"""
     
-    def __init__(self, target_host, timeout=2):
+    def __init__(self, target_host, timeout=2): 
         """Инициализируем сканер с целевым хостом и таймаутом"""
         self.target_host = target_host  # Сохраняем целевой хост
         self.timeout = timeout  # Сохраняем таймаут соединения
@@ -168,94 +164,87 @@ def display_results(results, show_all=False):
     print(f"Всего: {total} | Открыто: {open_count} | "
           f"Закрыто: {closed_count} | Фильтруется: {filtered_count}")  # Статистика
 
-# Шаг 9: Основная функция программы
-def main():
-    """Главная функция с CLI интерфейсом"""
-    # Создаем парсер аргументов командной строки
-    parser = argparse.ArgumentParser(
-        description='Сканер портов - утилита для проверки открытых портов на хосте',
-        epilog='Примеры использования:\n'
-               '  python port_scanner.py localhost -p 1-100\n'
-               '  python port_scanner.py 192.168.1.1 -p 20-443 -s\n'
-               '  python port_scanner.py example.com -p 80,443,8080'
-    )
-    
-    # Определяем обязательные и опциональные аргументы
-    parser.add_argument('host', help='Целевой хост или IP-адрес для сканирования')  # Обязательный аргумент
-    parser.add_argument('-p', '--ports', default='1-1000',  # Аргумент для портов
-                       help='Диапазон портов для сканирования (по умолчанию: 1-1000)')
-    parser.add_argument('-t', '--threads', type=int, default=50,  # Аргумент для потоков
-                       help='Количество потоков для сканирования (по умолчанию: 50)')
-    parser.add_argument('-s', '--service', action='store_true',  # Флаг определения сервисов
-                       help='Определять сервисы на открытых портах')
-    parser.add_argument('-a', '--all', action='store_true',  # Флаг показа всех портов
-                       help='Показывать все порты (включая закрытые)')
-    parser.add_argument('--timeout', type=float, default=2.0,  # Аргумент для таймаута
-                       help='Таймаут соединения в секундах (по умолчанию: 2.0)')
-    
-    # Парсим аргументы из командной строки
-    args = parser.parse_args()
-    
-    # Шаг 10: Обрабатываем диапазон портов
-    if '-' in args.ports:  # Если указан диапазон через дефис
-        try:
-            start_port, end_port = map(int, args.ports.split('-'))  # Разделяем и преобразуем в числа
-        except ValueError:  # Если не удалось преобразовать в числа
-            print("Ошибка: некорректный формат диапазона портов. Используйте 'начальный-конечный'")
-            sys.exit(1)  # Завершаем программу с кодом ошибки
-    elif ',' in args.ports:  # Если указаны конкретные порты через запятую
-        try:
-            port_list = [int(p.strip()) for p in args.ports.split(',')]  # Создаем список портов
-            start_port, end_port = min(port_list), max(port_list)  # Определяем диапазон
-        except ValueError:  # Если не удалось преобразовать в числа
-            print("Ошибка: некорректный список портов. Используйте 'порт1,порт2,порт3'")
-            sys.exit(1)  # Завершаем программу с кодом ошибки
-    else:  # Если указан один порт
-        try:
-            start_port = end_port = int(args.ports)  # Оба порта равны указанному
-        except ValueError:  # Если не удалось преобразовать в число
-            print("Ошибка: порт должен быть числом")
-            sys.exit(1)  # Завершаем программу с кодом ошибки
-    
-    # Шаг 11: Валидируем входные данные
-    print(f"\nПроверка параметров...")  # Информационное сообщение
-    is_valid, message = validate_input(args.host, start_port, end_port)  # Вызываем валидацию
-    if not is_valid:  # Если валидация не пройдена
-        print(f"Ошибка: {message}")  # Выводим сообщение об ошибке
-        sys.exit(1)  # Завершаем программу с кодом ошибки
-    
-    # Шаг 12: Создаем сканер и начинаем сканирование
-    print(f"Начинаю сканирование {args.host} (порты {start_port}-{end_port})...")  # Информация
-    print(f"Используется {args.threads} потоков, таймаут: {args.timeout} сек")  # Параметры
-    
-    if args.service:  # Если включено определение сервисов
-        print("Определение сервисов: ВКЛЮЧЕНО")  # Информация
-    
-    scanner = PortScanner(args.host, args.timeout)  # Создаем объект сканера
-    start_time = time.time()  # Засекаем время начала сканирования
-    
+# Шаг 9: Создаем парсер аргументов командной строки
+parser = argparse.ArgumentParser(
+    description='Сканер портов - утилита для проверки открытых портов на хосте',
+    epilog='Примеры использования:\n'
+           '  python port_scanner.py localhost -p 1-100\n'
+           '  python port_scanner.py 192.168.1.1 -p 20-443 -s\n'
+           '  python port_scanner.py example.com -p 80,443,8080'
+)
+
+# Определяем обязательные и опциональные аргументы
+parser.add_argument('host', help='Целевой хост или IP-адрес для сканирования')  # Обязательный аргумент
+parser.add_argument('-p', '--ports', default='1-1000',  # Аргумент для портов
+                   help='Диапазон портов для сканирования (по умолчанию: 1-1000)')
+parser.add_argument('-t', '--threads', type=int, default=50,  # Аргумент для потоков
+                   help='Количество потоков для сканирования (по умолчанию: 50)')
+parser.add_argument('-s', '--service', action='store_true',  # Флаг определения сервисов
+                   help='Определять сервисы на открытых портах')
+parser.add_argument('-a', '--all', action='store_true',  # Флаг показа всех портов
+                   help='Показывать все порты (включая закрытые)')
+parser.add_argument('--timeout', type=float, default=2.0,  # Аргумент для таймаута
+                   help='Таймаут соединения в секундах (по умолчанию: 2.0)')
+
+# Шаг 10: Парсим аргументы из командной строки
+args = parser.parse_args()
+
+# Шаг 11: Обрабатываем диапазон портов
+if '-' in args.ports:  # Если указан диапазон через дефис
     try:
-        # Запускаем сканирование
-        results = scanner.scan_range(  # Вызываем метод сканирования
-            start_port, end_port,  # Диапазон портов
-            args.threads,  # Количество потоков
-            args.service  # Определение сервисов
-        )
-        
-        scan_time = time.time() - start_time  # Вычисляем время сканирования
-        
-        # Шаг 13: Выводим результаты
-        display_results(results, args.all)  # Вызываем функцию отображения результатов
-        print(f"\nСканирование завершено за {scan_time:.2f} секунд")  # Время выполнения
-        
-    except KeyboardInterrupt:  # Если пользователь нажал Ctrl+C
-        print("\n\nСканирование прервано пользователем (Ctrl+C)")  # Сообщение
-        sys.exit(0)  # Завершаем программу нормально
-        
-    except Exception as e:  # Любая другая ошибка
-        print(f"\nПроизошла ошибка при сканировании: {str(e)}")  # Сообщение об ошибке
+        start_port, end_port = map(int, args.ports.split('-'))  # Разделяем и преобразуем в числа
+    except ValueError:  # Если не удалось преобразовать в числа
+        print("Ошибка: некорректный формат диапазона портов. Используйте 'начальный-конечный'")
+        sys.exit(1)  # Завершаем программу с кодом ошибки
+elif ',' in args.ports:  # Если указаны конкретные порты через запятую
+    try:
+        port_list = [int(p.strip()) for p in args.ports.split(',')]  # Создаем список портов
+        start_port, end_port = min(port_list), max(port_list)  # Определяем диапазон
+    except ValueError:  # Если не удалось преобразовать в числа
+        print("Ошибка: некорректный список портов. Используйте 'порт1,порт2,порт3'")
+        sys.exit(1)  # Завершаем программу с кодом ошибки
+else:  # Если указан один порт
+    try:
+        start_port = end_port = int(args.ports)  # Оба порта равны указанному
+    except ValueError:  # Если не удалось преобразовать в число
+        print("Ошибка: порт должен быть числом")
         sys.exit(1)  # Завершаем программу с кодом ошибки
 
-# Шаг 14: Точка входа в программу
-if __name__ == "__main__":
-    main()  # Вызываем главную функцию
+# Шаг 12: Валидируем входные данные
+print(f"\nПроверка параметров...")  # Информационное сообщение
+is_valid, message = validate_input(args.host, start_port, end_port)  # Вызываем валидацию
+if not is_valid:  # Если валидация не пройдена
+    print(f"Ошибка: {message}")  # Выводим сообщение об ошибке
+    sys.exit(1)  # Завершаем программу с кодом ошибки
+
+# Шаг 13: Создаем сканер и начинаем сканирование
+print(f"Начинаю сканирование {args.host} (порты {start_port}-{end_port})...")  # Информация
+print(f"Используется {args.threads} потоков, таймаут: {args.timeout} сек")  # Параметры
+
+if args.service:  # Если включено определение сервисов
+    print("Определение сервисов: ВКЛЮЧЕНО")  # Информация
+
+scanner = PortScanner(args.host, args.timeout)  # Создаем объект сканера
+start_time = time.time()  # Засекаем время начала сканирования
+
+try:
+    # Запускаем сканирование
+    results = scanner.scan_range(  # Вызываем метод сканирования
+        start_port, end_port,  # Диапазон портов
+        args.threads,  # Количество потоков
+        args.service  # Определение сервисов
+    )
+    
+    scan_time = time.time() - start_time  # Вычисляем время сканирования
+    
+    # Шаг 14: Выводим результаты
+    display_results(results, args.all)  # Вызываем функцию отображения результатов
+    print(f"\nСканирование завершено за {scan_time:.2f} секунд")  # Время выполнения
+    
+except KeyboardInterrupt:  # Если пользователь нажал Ctrl+C
+    print("\n\nСканирование прервано пользователем (Ctrl+C)")  # Сообщение
+    sys.exit(0)  # Завершаем программу нормально
+    
+except Exception as e:  # Любая другая ошибка
+    print(f"\nПроизошла ошибка при сканировании: {str(e)}")  # Сообщение об ошибке
+    sys.exit(1)  # Завершаем программу с кодом ошибки
