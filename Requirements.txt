@@ -1,8 +1,0 @@
-# Сканер портов: Зависимости
-# Все импорты из кода:
-# import socket
-# import threading
-# import argparse
-# import sys
-# import time
-# import ipaddress
